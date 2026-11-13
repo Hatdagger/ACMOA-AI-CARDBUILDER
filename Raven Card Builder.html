@@ -193,16 +193,18 @@ const needsBooster=()=>state.rec[3]<27;            /* caterpillar legs carry the
 function normalise(){
   /* weapon arms are the weapons: nothing in the hands */
   if(weaponArms()){state.rec[4]=0;state.rec[5]=255}
+  /* caterpillar legs have their own drive and cannot take a booster */
+  if(!needsBooster())state.rec[12]=255;
   setMask(mask()&((1<<OPTIONS.length)-1));
 }
 function syncSelects(){
   SLOTS.forEach(([cat,byte],n)=>{const s=$('slot'+n);s.value=state.rec[byte];if(s.selectedIndex<0){s.selectedIndex=0;state.rec[byte]=+s.value}
-    s.disabled=weaponArms()&&(cat==='hand'||cat==='blade')});
+    s.disabled=(weaponArms()&&(cat==='hand'||cat==='blade'))||(cat==='boost'&&!needsBooster())});
   const m=mask(),free=slotMax()-slotsUsed();
   OPTIONS.forEach(([, ,slots],i)=>{const c=$('opt'+i),on=!!(m&(1<<i));c.checked=on;c.disabled=!on&&slots>free;c.parentElement.classList.toggle('off',c.disabled)});
   $('plus').checked=state.plus>0;
   $('pluslabel').textContent=state.plus>0&&state.plus!==PLUS_FULL?'Human PLUS (level '+state.plus+' on this card)':'Human PLUS';
-  $('paintnote').textContent=state.paintAuto?'Until you pick a colour, paint follows the emblem: its four most used colours, toned down, become base, detail, joint and optional.':'Colour values are the game\'s own slider numbers, 0 to '+PMAX+'.';
+  $('paintnote').textContent=state.paintAuto?'Until you pick a colour, paint follows the emblem: its four most used colours become base, detail, joint and optional.':'Colour values are the game\'s own slider numbers, 0 to '+PMAX+'.';
 }
 const slotMax=()=>CORE_SLOTS[state.rec[0]]||0;
 const slotsUsed=()=>OPTIONS.reduce((n,[, ,s],i)=>n+((mask()>>i)&1)*s,0);
