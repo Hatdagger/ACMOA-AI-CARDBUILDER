@@ -37,6 +37,7 @@ button:hover,.file:hover{background:#f0a02022}
 .pal i{width:16px;height:16px;display:block;border:1px solid #0008}
 .card{max-width:100%;width:100%;height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);background:#000;display:block}
 .acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.nf small{display:block;font-size:11px;opacity:.65;margin-top:2px}
 .note{color:var(--dim);font-size:12.5px;margin:0;max-width:60ch}
 .status{font-family:var(--mono);font-size:12.5px;margin:0;min-height:1.5em;overflow-wrap:anywhere}
 .ok{color:var(--on)} .bad{color:var(--warn)} .warn{color:var(--hi)}
@@ -80,8 +81,8 @@ button:disabled{opacity:.4;cursor:not-allowed}
  <div class="col">
   <section><h2>Pilot</h2>
    <div class="rows">
-    <label for="pilot">Pilot</label><input type="text" id="pilot" maxlength="16" value="Lynx Minx" autocomplete="off">
-    <label for="acname">AC name</label><input type="text" id="acname" maxlength="16" value="Kitten" autocomplete="off">
+    <label for="pilot">Pilot</label><span class="nf"><input type="text" id="pilot" maxlength="8" value="Lynx" autocomplete="off" spellcheck="false"><small id="pilot-n"></small></span>
+    <label for="acname">AC name</label><span class="nf"><input type="text" id="acname" maxlength="8" value="Kitten" autocomplete="off" spellcheck="false"><small id="acname-n"></small></span>
    </div>
    <label class="chk" for="plus"><input type="checkbox" id="plus"><span id="pluslabel">Human PLUS</span></label>
    <p class="note">Human PLUS is all or nothing here. With it on, the game fields the AC even when it is over its weight or energy limits.</p>
@@ -307,7 +308,11 @@ function drawPaint(){
    2 bits variant, 4 bits Human PLUS level, 1 bit "all four sections share one paint", then 12 or 48 colour values of
    7 bits, two 5-bit name lengths and the names as 7-bit characters. A length byte leads and a CRC-16 follows. */
 function crc16(b){let c=0xffff;for(const v of b){c^=v<<8;for(let i=0;i<8;i++)c=c&0x8000?((c<<1)^0x1021)&0xffff:(c<<1)&0xffff}return c}
-const enc=s=>Array.from(s.slice(0,16)).map(ch=>{const c=ch.charCodeAt(0);return c>=32&&c<127?c:63});
+/* The game stores a name as 8 full-width characters: letters, digits, space and a few marks. Anything else is blanked. */
+const NAME_MAX=8,NAME_OK=/^[A-Za-z0-9 ,.:;?!\-\/~|'"()\[\]+=<$%#&*@]$/;
+const cleanName=s=>Array.from(s).slice(0,NAME_MAX).map(ch=>NAME_OK.test(ch)?ch:' ').join('');
+const enc=s=>Array.from(cleanName(s)).map(ch=>ch.charCodeAt(0));
+function fixNames(){for(const id of ['pilot','acname']){const e=$(id),v=cleanName(e.value);if(v!==e.value){const p=e.selectionStart;e.value=v;try{e.setSelectionRange(p,p)}catch(_){}}$(id+'-n').textContent=Array.from(v).length+' / '+NAME_MAX+' max'}}
 function pack(){
   const bits=[],put=(v,n)=>{for(let i=n-1;i>=0;i--)bits.push((v>>i)&1)};
   put(3,4);
@@ -369,8 +374,8 @@ function drawCard(){
   const t=document.createElement('canvas');t.width=t.height=256;t.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(state.art),256,256),0,0);
   x.imageSmoothingEnabled=false;x.drawImage(t,EX,EY,512,512);x.imageSmoothingEnabled=true;
   x.font='600 15px "Chakra Petch",sans-serif';x.textBaseline='middle';x.fillStyle='#b9d4cf';
-  x.textAlign='left';x.fillText($('acname').value.trim().toUpperCase(),EX,44);
-  x.textAlign='right';x.fillStyle='#5f7f80';x.fillText($('pilot').value.trim().toUpperCase(),EX+512,44);
+  x.textAlign='left';x.fillText(cleanName($('acname').value).trim().toUpperCase(),EX,44);
+  x.textAlign='right';x.fillStyle='#5f7f80';x.fillText(cleanName($('pilot').value).trim().toUpperCase(),EX+512,44);
   x.textAlign='left';x.font='500 11px "Chakra Petch",sans-serif';x.fillText('MASTER OF ARENA  /  AI BATTLE ENTRY',EX,598);
   return {cv,used:bytes.length,cells,cols};
 }
@@ -399,7 +404,7 @@ function apply(u){
   state.paintAuto=!u.paint;setArt(u.art,u.pal);
   if(u.paint)state.paint=u.paint;
   $('split').checked=!uniform();
-  $('pilot').value=u.names[0];$('acname').value=u.names[1];render();
+  $('pilot').value=u.names[0];$('acname').value=u.names[1];fixNames();render();
 }
 
 /* ---- stats: each part's own numbers, the totals, and the game's own checks ---- */
@@ -453,7 +458,7 @@ function say(msg,ok){const s=$('status');s.textContent=msg;s.className='status '
 function loadImage(file,cb){const img=new Image();img.onload=()=>cb(img);img.onerror=()=>say('That file could not be opened as an image.',false);img.src=URL.createObjectURL(file)}
 function sameBuild(u){
   return u.rec.every((v,i)=>v===state.rec[i])&&u.flag===state.flag&&u.pattern===state.pattern&&u.variant===state.variant&&u.plus===state.plus&&
-    !!u.paint&&u.paint.every((v,i)=>v===state.paint[i])&&u.names[0]===$('pilot').value.trim().slice(0,16)&&u.names[1]===$('acname').value.trim().slice(0,16);
+    !!u.paint&&u.paint.every((v,i)=>v===state.paint[i])&&u.names[0]===cleanName($('pilot').value).trim()&&u.names[1]===cleanName($('acname').value).trim();
 }
 
 $('embfile').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,img=>{setEmblemFromCanvas(img);render()})});
@@ -467,7 +472,8 @@ $('selftest').addEventListener('click',()=>{
       say(same?('Read back correctly after shrinking to 480 px and JPEG. Game emblem pixels that differ: '+wrong+' of 4096.'):'Read back, but the build did not match.',same)}catch(err){say('Did not survive shrinking and JPEG: '+err.message,false)}};
   img.src=small.toDataURL('image/jpeg',0.7);
 });
-for(const id of ['pilot','acname'])$(id).addEventListener('input',refresh);
+for(const id of ['pilot','acname'])$(id).addEventListener('input',()=>{fixNames();refresh()});
+fixNames();
 $('plus').addEventListener('change',e=>{state.plus=e.target.checked?PLUS_FULL:0;render()});
 $('split').addEventListener('change',e=>{if(!e.target.checked)for(let i=12;i<48;i++)state.paint[i]=state.paint[i%12];render()});
 $('fromemblem').addEventListener('click',()=>{state.paintAuto=true;paintFromEmblem();$('split').checked=false;render()});
