@@ -1,0 +1,491 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Raven Card Builder</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a garage bench. Left, the build sheet (parts, names, emblem); right, the card as it will be saved, with a reader below it. Single dark look, after the game's system menu. */
+:root{
+  color-scheme:dark;
+  --ground:#06090d; --panel:#0b1218; --line:#2f4a55; --text:#b9d4cf; --bright:#fff4dc;
+  --dim:#5f7f80; --hi:#f0a020; --on:#5fe08a; --warn:#e25b3a;
+  --display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+body{background:var(--ground);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5;
+  background-image:linear-gradient(#1a2b3355 1px,transparent 1px),linear-gradient(90deg,#1a2b3355 1px,transparent 1px);background-size:32px 32px}
+.wrap{max-width:1100px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px}
+h1{font-family:var(--display);font-weight:600;font-size:26px;letter-spacing:.04em;text-transform:uppercase;color:#dfeeea;margin:0}
+header span{font-family:var(--display);font-size:12px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.lede{max-width:65ch;margin:0}
+.bench{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+section{background:var(--panel);border:1px solid var(--line);padding:18px 16px 16px;position:relative;min-width:0;display:flex;flex-direction:column;gap:12px}
+section>h2{position:absolute;top:-9px;left:12px;margin:0;padding:0 8px;background:var(--ground);font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.rows{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center}
+label{font-family:var(--display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+select,input[type=text]{width:100%;background:var(--ground);color:var(--bright);border:1px solid var(--line);padding:7px 8px;font-family:var(--mono);font-size:13px;border-radius:0}
+select:focus-visible,input:focus-visible,button:focus-visible,.file:focus-within{outline:2px solid var(--hi);outline-offset:1px}
+button,.file{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--hi);border:1px solid var(--hi);padding:8px 14px;cursor:pointer;display:inline-block}
+button:hover,.file:hover{background:#f0a02022}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.emb{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.emb canvas{width:128px;height:128px;image-rendering:pixelated;border:1px solid var(--line);background:#000}
+.pal{display:grid;grid-template-columns:repeat(8,16px);gap:2px}
+.pal i{width:16px;height:16px;display:block;border:1px solid #0008}
+.card{max-width:100%;width:100%;height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);background:#000;display:block}
+.acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{color:var(--dim);font-size:12.5px;margin:0;max-width:60ch}
+.status{font-family:var(--mono);font-size:12.5px;margin:0;min-height:1.5em;overflow-wrap:anywhere}
+.ok{color:var(--on)} .bad{color:var(--warn)} .warn{color:var(--hi)}
+.slot{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pstat{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:pre-wrap;min-height:1.4em;font-variant-numeric:tabular-nums}
+.paint{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}
+.paint div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.paint dt{font-family:var(--display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.paint dd{margin:0;height:22px;border:1px solid var(--line)}
+.totals{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;margin:0}
+.totals dt{font-family:var(--display);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.totals dd{margin:0;font-family:var(--mono);font-size:13px;color:var(--bright);text-align:right;font-variant-numeric:tabular-nums}
+.totals dd.badc{color:var(--warn)} .totals dd.warnc{color:var(--hi)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.rows{align-items:start} .rows>label{padding-top:8px}
+.bits{font-family:var(--mono);font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.opts{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+.optx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.optx b{font-weight:500}
+.optx em{font-style:normal;font-family:var(--body);font-size:12.5px;color:var(--text)}
+.chk{display:flex;gap:8px;align-items:baseline;font-family:var(--mono);font-size:12.5px;color:var(--bright);letter-spacing:0;text-transform:none;cursor:pointer}
+.chk input{accent-color:var(--hi);margin:0;flex:none;transform:translateY(2px)}
+.chk small{color:var(--dim);font-size:11.5px;margin-left:auto;white-space:nowrap}
+.chk.off{opacity:.45;cursor:not-allowed}
+.swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sw{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sw span{font-family:var(--display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.sw input[type=color]{width:100%;height:28px;padding:0;border:1px solid var(--line);background:var(--ground);border-radius:0;cursor:pointer}
+.sw output{font-family:var(--mono);font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.sec{font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text);margin:4px 0 0}
+.emb canvas#art{width:192px;height:192px;image-rendering:auto;max-width:100%}
+.emb canvas.game{width:96px;height:96px}
+.emb{align-items:flex-start}
+.embcol{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.embcol span{font-family:var(--display);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+</style>
+<div class="wrap">
+<header><h1>Raven Card Builder</h1><span>Master of Arena · AI Battle cards</span></header>
+<p class="lede">Build an AC, give it an emblem and paint, and save it as one square image. The whole build travels in a colour bar down the left edge, the way a printer's test strip carries its patches: first the emblem's sixteen game colours, then only as many blocks as the build needs.</p>
+<div class="bench">
+ <div class="col">
+  <section><h2>Pilot</h2>
+   <div class="rows">
+    <label for="pilot">Pilot</label><input type="text" id="pilot" maxlength="16" value="Lynx Minx" autocomplete="off">
+    <label for="acname">AC name</label><input type="text" id="acname" maxlength="16" value="Kitten" autocomplete="off">
+   </div>
+   <label class="chk" for="plus"><input type="checkbox" id="plus"><span id="pluslabel">Human PLUS</span></label>
+   <p class="note">Human PLUS is all or nothing here. With it on, the game fields the AC even when it is over its weight or energy limits.</p>
+  </section>
+  <section><h2>Assembly</h2><div class="rows" id="parts"></div>
+  </section>
+  <section><h2>Optional parts</h2>
+   <div class="opts" id="opts"></div>
+   <p class="status" id="optmsg" role="status"></p>
+  </section>
+  <section><h2>Status</h2>
+   <dl class="totals">
+    <dt>Total weight</dt><dd id="t-weight"></dd>
+    <dt>Leg load</dt><dd id="t-leg"></dd>
+    <dt>Arm load</dt><dd id="t-arm"></dd>
+    <dt>Energy drain</dt><dd id="t-en"></dd>
+    <dt>Option slots</dt><dd id="t-opt"></dd>
+    <dt>Armour points</dt><dd id="t-ap"></dd>
+    <dt>Defence, shell / energy</dt><dd id="t-def"></dd>
+   </dl>
+   <p class="status" id="verdict" role="status"></p>
+   <p class="note">These are the game's own checks. Leg load is everything the legs carry. Arm load is the two hand weapons against the core's limit. Energy drain is every part against the generator's output.</p>
+  </section>
+ </div>
+ <div class="col">
+  <section><h2>Emblem</h2>
+   <div class="emb">
+    <div class="embcol"><canvas id="art" width="256" height="256" aria-label="Emblem as it appears on the shared card, 256 by 256 pixels"></canvas><span>On the card</span></div>
+    <div class="embcol"><canvas id="emb" class="game" width="64" height="64" aria-label="Emblem as the game shows it, 64 by 64 pixels in 16 colours"></canvas><span>In the game</span>
+     <div class="pal" id="pal" aria-hidden="true"></div></div>
+   </div>
+   <div class="acts"><label class="file">Upload an image<input type="file" id="embfile" accept="image/*"></label></div>
+   <p class="note">The card keeps your picture at 256 × 256 so it looks good when shared. The game stores emblems at 64 × 64 in 16 colours, so that smaller version is made from it whenever the card is loaded for a match.</p>
+  </section>
+  <section><h2>Paint</h2>
+   <div id="custom" class="col" style="gap:12px">
+    <div id="paint" class="col" style="gap:10px"></div>
+    <label class="chk" for="split"><input type="checkbox" id="split"><span>Paint head, core, arms and legs separately</span></label>
+    <div class="acts"><button id="fromemblem" type="button">Take colours from emblem</button></div>
+   </div>
+   <p class="note" id="paintnote"></p>
+  </section>
+  <section><h2>Card</h2>
+   <img id="card" class="card" alt="The card: emblem in the centre, colour bar of data down the left edge" width="640" height="640">
+   <div class="acts"><button id="save" type="button">Save image</button><span class="bits" id="bits"></span></div>
+   <p class="status" id="savemsg" role="status"></p>
+  </section>
+  <section><h2>Read a card</h2>
+   <div class="acts"><label class="file">Open a card image<input type="file" id="readfile" accept="image/*"></label><button id="selftest" type="button">Test this card</button></div>
+   <p class="status" id="status" role="status">Open a saved card to load it back into the builder.</p>
+   <p class="note">Test this card re-reads the card above after shrinking it and saving it as a JPEG, the way a chat app would.</p>
+  </section>
+ </div>
+</div>
+</div>
+<script>
+const PARTS={"head":[[0,"HD-01-SRVT",122,350,816,154,149,0],[1,"HD-2002",156,457,787,140,154,0],[2,"HD-X1487",166,420,975,160,185,0],[3,"HD-REDEYE",146,538,840,148,151,0],[4,"HD-D-9066",138,657,885,165,232,0],[5,"HD-GRY-NX",232,218,1004,194,134,0],[6,"HD-06-RADAR",145,875,741,109,194,0],[7,"HD-ONE",161,304,800,132,129,0],[8,"HD-08-DISH",133,716,870,205,162,0],[9,"HD-ZERO",185,431,925,221,149,0],[10,"HD-G780",393,723,905,146,292,0],[11,"HD-12-RADAR",180,511,831,104,159,0],[12,"HD-HELM",134,793,850,172,185,0],[13,"HD-H10",261,332,956,204,210,0],[14,"HD-4004",139,628,820,146,138,0]],"core":[[0,"XCA-00",1103,1046,2710,530,505,2770],[1,"XCL-01",885,1380,2380,492,610,2450],[2,"XCH-01",1384,873,3015,615,543,3600],[3,"XXA-S0",784,1273,2050,580,560,2820],[4,"XXL-D0",910,1120,2960,608,610,3320]],"legs":[[0,"LN-1001",1966,1725,3235,556,531,4520],[1,"LN-SSVT",1528,2338,2795,482,507,3560],[2,"LN-3001",3137,2206,3703,815,594,6600],[3,"LN-1001-PX-0",1892,1844,3035,528,508,4130],[4,"LN-501",1675,2910,2947,508,535,3990],[5,"LN-SSVR",2750,2013,3606,789,532,5400],[6,"LN-1001B",2305,1889,3383,585,543,4680],[8,"LN-3001C",3528,2418,3977,824,602,7100],[9,"LN-S3",2300,2050,3426,752,680,5630],[10,"LN-502",1790,2466,3343,538,592,3800],[11,"LN-D-8000R",2426,2350,3532,510,656,4770],[12,"LN-2KZ-SP",1820,3034,2210,648,742,4420],[13,"LNKS-1B46J",3065,2304,3788,772,608,6100],[14,"LB-4400",2520,1400,3560,617,451,4120],[16,"LB-4401",2910,1456,3810,672,468,4610],[17,"LB-4303",2647,1585,3575,643,488,4280],[18,"LB-1000-P",2095,1228,3514,609,444,3875],[19,"LBKS-2B45A",2480,1703,3731,584,515,4090],[20,"LB-H230",3458,1848,3880,695,430,5124],[21,"LF-205-SF",2137,2810,2841,446,654,3450],[22,"LFH-X3",2400,2988,3100,468,610,3810],[23,"LF-DEX-1",2650,4016,3179,557,553,4450],[24,"LF-TR-0",2593,3358,2546,589,669,4360],[26,"LFH-X5X",2880,3584,3328,497,700,5000],[27,"LC-MOS18",4182,978,3928,773,535,8000],[28,"LC-UKI60",3860,1104,3822,741,551,6950],[30,"LC-HTP-AAA",2915,2877,3688,656,625,4130],[31,"LC-MOS4545",3610,2609,3990,835,668,7400],[32,"LC-HTP-H5",3056,3140,3884,687,645,5630]],"arms":[[0,"AN-101",1228,1006,1670,384,374,0],[1,"AN-201",1054,877,1635,352,334,0],[2,"AN-K1",905,930,1790,339,402,0],[3,"AN-D-7001",1445,1512,1743,306,453,0],[4,"AN-3001",1612,1258,1935,477,353,0],[5,"ANKS-1A46J",2120,1415,1990,659,496,0],[6,"AN-863-B",1726,1394,1880,517,406,0],[7,"AN-25",853,682,1826,344,284,0],[8,"AN-891-S",1790,1290,1920,480,509,0],[12,"AW-MG25/2",1193,78,812,0,0,0],[13,"AW-GT2000",1415,92,1132,0,0,0],[14,"AW-RF105",1530,106,1280,0,0,0],[15,"AW-30/3",480,377,688,0,0,0],[16,"AW-RF120",1827,137,1420,0,0,0],[17,"AW-S60/2",762,420,725,0,0,0],[18,"AW-XC5500",1688,547,875,0,0,0],[19,"AW-XC65",1905,625,792,0,0,0],[20,"AW-DC/2",1805,220,892,0,0,0],[21,"AW-R/4",1650,187,1600,0,0,0]],"hand":[[0,"NO WEAPON",0,0,0,0,0,0],[1,"WG-RF35",415,6,0,0,0,0],[2,"WG-MGA1",370,4,0,0,0,0],[3,"WG-MG500",458,4,0,0,0,0],[4,"WG-AR1000",516,8,0,0,0,0],[5,"WG-HG235",170,22,0,0,0,0],[6,"WG-RF/5",295,5,0,0,0,0],[7,"WG-RF/P",308,4,0,0,0,0],[8,"WG-HG512",324,10,0,0,0,0],[9,"WG-FG99",352,9,0,0,0,0],[10,"WG-B2120",778,13,0,0,0,0],[11,"WG-B2180",905,16,0,0,0,0],[12,"WG-XP1000",188,246,0,0,0,0],[13,"WG-XP2000",265,285,0,0,0,0],[14,"WG-XC4",686,308,0,0,0,0],[15,"WG-1-KARASAWA",1120,422,0,0,0,0],[16,"WG-RFM118",512,10,0,0,0,0],[17,"WG-XFwPPk",998,395,0,0,0,0],[18,"WG-HG1",283,52,0,0,0,0],[19,"WG-PB26",681,34,0,0,0,0],[20,"WA-Finger",150,120,0,0,0,0],[21,"WG-HG770",210,64,0,0,0,0],[22,"WG-XW11",547,451,0,0,0,0],[23,"WG-FGI-00",815,18,0,0,0,0],[24,"WG-RF/E",412,156,0,0,0,0],[25,"WG-MG500/E",415,10,0,0,0,0]],"back":[[0,"WM-S40/1",245,245,0,0,0,0],[1,"WM-S40/2",337,320,0,0,0,0],[2,"WM-S60/4",520,349,0,0,0,0],[3,"WM-S60/6",583,353,0,0,0,0],[4,"WM-MVG404",620,280,0,0,0,0],[5,"WM-MVG802",718,220,0,0,0,0],[6,"WM-L201",835,180,0,0,0,0],[7,"WM-X201",720,250,0,0,0,0],[8,"WM-X5-AA",616,85,0,0,0,0],[9,"WM-X10",939,105,0,0,0,0],[10,"WM-P4001",755,320,0,0,0,0],[11,"WM-PS-2",1125,360,0,0,0,0],[12,"WM-AT",1507,382,0,0,0,0],[13,"WM-TO100",725,290,0,0,0,0],[14,"WM-SMSS24",655,308,0,0,0,0],[15,"M118-TD",455,0,0,0,0,0],[16,"WM-MVG812",1016,300,0,0,0,0],[17,"WM-X15-EX",580,330,0,0,0,0],[18,"WR-S50",218,8,0,0,0,0],[19,"WR-S100",846,15,0,0,0,0],[20,"WR-M50",677,13,0,0,0,0],[21,"WR-M70",718,24,0,0,0,0],[22,"WR-L24",805,18,0,0,0,0],[23,"WR-RS7",759,31,0,0,0,0],[24,"WRR-10",351,24,0,0,0,0],[28,"WC-CN35",593,11,0,0,0,0],[29,"WC-ST120",827,6,0,0,0,0],[30,"WC-LN350",425,8,0,0,0,0],[31,"WC-GN230",1230,8,0,0,0,0],[32,"WC-XP4000",318,364,0,0,0,0],[33,"WC-XC8000",1110,455,0,0,0,0],[34,"WC-01QL",273,618,0,0,0,0],[35,"WC-SPGUN",912,10,0,0,0,0],[36,"WC-IR24",1006,806,0,0,0,0],[40,"RXA-01WE",210,243,0,0,0,0],[41,"RZ-A0",480,387,0,0,0,0],[42,"RXA-99",160,267,0,0,0,0],[43,"RXA-77",125,274,0,0,0,0],[44,"RZ-A1",433,403,0,0,0,0],[45,"RZT-333",343,451,0,0,0,0],[46,"RZ-BBP",454,566,0,0,0,0],[47,"RZ-Fw2",352,826,0,0,0,0],[52,"WX-S800/2",1650,415,0,0,0,0],[53,"WX-S800-GF",1110,656,0,0,0,0],[54,"XCS-9900",1480,310,0,0,0,0],[55,"WX-ED2",1350,750,0,0,0,0],[56,"WX-C/4",1670,905,0,0,0,0],[57,"P77-ST",1780,998,0,0,0,0]],"blade":[[0,"LS-2001",123,28,0,0,0,0],[1,"LS-200G",181,45,0,0,0,0],[2,"LS-3303",224,43,0,0,0,0],[3,"LS-99-MOONLIGHT",336,93,0,0,0,0],[4,"LS-1000W",212,71,0,0,0,0]],"boost":[[0,"B-P320",208,28,0,0,0,9800],[1,"B-P350",162,33,0,0,0,12800],[2,"B-T001",149,30,0,0,0,17300],[3,"B-T2",235,38,0,0,0,14800],[4,"B-P351",288,41,0,0,0,21000],[5,"B-VR-33",255,35,0,0,0,19000],[6,"B-HP25",186,35,0,0,0,8500],[7,"B-PT000",301,52,0,0,0,23400]],"fcs":[[0,"COMDEX-C7",14,24,0,0,0,0],[1,"COMDEX-G0",14,24,0,0,0,0],[2,"COMDEX-G8",14,24,0,0,0,0],[3,"QX-21",8,12,0,0,0,0],[4,"QX-AF",10,16,0,0,0,0],[5,"TRYX-BOXER",10,19,0,0,0,0],[6,"TRYX-QUAD",18,38,0,0,0,0],[7,"QX-9009",24,55,0,0,0,0],[8,"FBMB-18X",21,65,0,0,0,0],[9,"RATOR",18,75,0,0,0,0],[10,"P/CV",24,55,0,0,0,0]],"gen":[[0,"GPS-VVA",308,0,0,0,0,6000],[1,"GPS-V6",363,0,0,0,0,6000],[2,"GRD-RX5",225,0,0,0,0,6560],[3,"GRD-RX6",286,0,0,0,0,6800],[4,"GRD-RX7",348,0,0,0,0,7440],[5,"GBG-10000",398,0,0,0,0,9988],[6,"GBG-XR",452,0,0,0,0,8207],[7,"GBX-TL",1582,0,0,0,0,9055],[8,"GBX-XL",975,0,0,0,0,8500]]};
+/* Record byte for each slot (Master of Arena's 64-byte AC record), and whether the slot may be empty (0xFF). */
+const SLOTS=[['head',1,'Head',0],['core',0,'Core',0],['arms',2,'Arms',0],['legs',3,'Legs',0],['boost',12,'Booster',1],['fcs',8,'FCS',0],['gen',9,'Generator',0],['hand',4,'Right arm',0],['blade',5,'Left arm',1],['back',6,'Back left',1],['back',7,'Back right',1]];
+/* Optional parts in the game's own order: record bytes 10-11 hold one bit for each. Name, title, slots, and the game's own description. */
+const OPTIONS=[['SP-MAW','Radar option',1,'Adds a missile indicator to the radar.'],['SP-JAM','Missile jammer',3,'Interferes with enemy missile lock-on.'],['SP-M/AUTO','Auto launcher',1,'Launches missiles automatically.'],['SP-ABS','Balancer option',1,'Decreases impact shock.'],['SP-SAP','Absorber option',1,'Decreases cannon recoil.'],['SP-CND-K','Charge expander',4,'Increases energy output.'],['SP-AXL','FCS accelerator',2,'Accelerates lock-on time.'],['SP-S/SCR','Shell screen',2,'Decreases projectile damage.'],['SP-E/SCR','Energy screen',1,'Decreases energy damage.'],['SP-EH','Rapid charge',1,'Increases energy weapon recharge.'],['SP-E+','Energy amplifier',1,'Increases energy weapon power.'],['SP-DE','Energy reduce',5,'Decreases energy used.']];
+const CORE_SLOTS={0:8,1:16,2:12,3:17,4:5};
+const SECTIONS=['Head','Core','Arms','Legs'],TONES=['Base','Optional','Detail','Joint'];
+const PAINT0=[0x20,0x24,0x1c,0x10,0x14,0x0c,0x12,0x18,0x0c,0x0c,0x12,0x0c];   /* the game's default paint */
+const PLUS_FULL=9,PMAX=64;                      /* highest Human PLUS level in the game's data; top of a colour slider */
+const DEFAULT=[0,6,0,6,4,3,0x1e,2,6,6,0,0,0];
+const $=id=>document.getElementById(id);
+const state={rec:DEFAULT.slice(),flag:0,pattern:0,variant:0,plus:0,paint:new Uint8Array(48),paintAuto:true,
+  art:new Uint8ClampedArray(256*256*4),pal:new Uint16Array(16),px:new Uint8Array(4096)};
+for(let i=0;i<48;i++)state.paint[i]=PAINT0[i%12];
+
+/* Sub-sorting inside a slot, by the part's own series prefix. */
+function groupOf(cat,name){
+  if(cat==='arms')return name.startsWith('AW')?'Weapon arms':'Regular arms';
+  if(cat==='legs')return name.startsWith('LB')?'Reverse joint':name.startsWith('LF')?'Four legs':name.startsWith('LC')?'Caterpillar':'Humanoid';
+  if(cat==='back')return /^(WM|M118)/.test(name)?'Missiles':name.startsWith('WR')?'Rockets':/^R[XZ]/.test(name)?'Radars':'Cannons and guns';
+  return '';
+}
+function buildSelects(){
+  const host=$('parts');
+  SLOTS.forEach(([cat,byte,label,optional],n)=>{
+    const l=document.createElement('label');l.htmlFor='slot'+n;l.textContent=label;
+    const s=document.createElement('select');s.id='slot'+n;
+    if(optional){const o=document.createElement('option');o.value=255;o.textContent='— none —';s.append(o)}
+    const groups=new Map();
+    for(const [i,name] of PARTS[cat]){const g=groupOf(cat,name);if(!groups.has(g))groups.set(g,[]);groups.get(g).push([i,name])}
+    for(const [g,items] of groups){let host2=s;if(g){host2=document.createElement('optgroup');host2.label=g;s.append(host2)}
+      for(const [i,name] of items){const o=document.createElement('option');o.value=i;o.textContent=name;host2.append(o)}}
+    s.value=state.rec[byte];if(s.selectedIndex<0)s.selectedIndex=0;
+    s.addEventListener('change',()=>{state.rec[byte]=+s.value;render()});
+    const box=document.createElement('div');box.className='slot';const st=document.createElement('p');st.className='pstat';st.id='stat'+n;box.append(s,st);
+    host.append(l,box);
+  });
+  const oh=$('opts');
+  OPTIONS.forEach(([name,what,slots,does],i)=>{
+    const l=document.createElement('label');l.className='chk';l.htmlFor='opt'+i;
+    const c=document.createElement('input');c.type='checkbox';c.id='opt'+i;
+    const t=document.createElement('span');t.className='optx';
+    const h=document.createElement('b');h.textContent=name+'  '+what;const dd=document.createElement('em');dd.textContent=does;t.append(h,dd);
+    const k=document.createElement('small');k.textContent=slots+(slots>1?' slots':' slot');
+    c.addEventListener('change',()=>{setMask(c.checked?mask()|(1<<i):mask()&~(1<<i));render()});
+    l.append(c,t,k);oh.append(l);
+  });
+}
+const mask=()=>state.rec[10]|(state.rec[11]<<8);
+function setMask(m){state.rec[10]=m&255;state.rec[11]=(m>>8)&255}
+const weaponArms=()=>state.rec[2]>=12&&state.rec[2]!==255;
+const needsBooster=()=>state.rec[3]<27;            /* caterpillar legs carry their own drive */
+function normalise(){
+  /* weapon arms are the weapons: nothing in the hands */
+  if(weaponArms()){state.rec[4]=0;state.rec[5]=255}
+  setMask(mask()&((1<<OPTIONS.length)-1));
+}
+function syncSelects(){
+  SLOTS.forEach(([cat,byte],n)=>{const s=$('slot'+n);s.value=state.rec[byte];if(s.selectedIndex<0){s.selectedIndex=0;state.rec[byte]=+s.value}
+    s.disabled=weaponArms()&&(cat==='hand'||cat==='blade')});
+  const m=mask(),free=slotMax()-slotsUsed();
+  OPTIONS.forEach(([, ,slots],i)=>{const c=$('opt'+i),on=!!(m&(1<<i));c.checked=on;c.disabled=!on&&slots>free;c.parentElement.classList.toggle('off',c.disabled)});
+  $('plus').checked=state.plus>0;
+  $('pluslabel').textContent=state.plus>0&&state.plus!==PLUS_FULL?'Human PLUS (level '+state.plus+' on this card)':'Human PLUS';
+  $('paintnote').textContent=state.paintAuto?'Until you pick a colour, paint follows the emblem: its four most used colours, toned down, become base, detail, joint and optional.':'Colour values are the game\'s own slider numbers, 0 to '+PMAX+'.';
+}
+const slotMax=()=>CORE_SLOTS[state.rec[0]]||0;
+const slotsUsed=()=>OPTIONS.reduce((n,[, ,s],i)=>n+((mask()>>i)&1)*s,0);
+
+/* ---- emblem. The card carries the picture at 256x256 in full colour. The game's emblem is 64x64 in 16 colours of
+        15-bit RGB, and is always derived the same way: average each 4x4 block, then take the nearest palette colour. ---- */
+const q5=v=>Math.max(0,Math.min(31,Math.round(v*31/255)));
+const c15=(r,g,b)=>q5(r)|(q5(g)<<5)|(q5(b)<<10);
+const rgb=c=>[(c&31)*255/31|0,((c>>5)&31)*255/31|0,((c>>10)&31)*255/31|0];
+function shrink(art){               /* 256x256 RGBA -> 64x64 RGB averages */
+  const out=new Float32Array(4096*3);
+  for(let y=0;y<64;y++)for(let x=0;x<64;x++){let r=0,g=0,b=0;
+    for(let j=0;j<4;j++)for(let i=0;i<4;i++){const o=((y*4+j)*256+x*4+i)*4;r+=art[o];g+=art[o+1];b+=art[o+2]}
+    const k=(y*64+x)*3;out[k]=r/16;out[k+1]=g/16;out[k+2]=b/16}
+  return out;
+}
+function medianCut(small){          /* 16 colours */
+  const pts=[];for(let i=0;i<4096;i++)pts.push([small[i*3],small[i*3+1],small[i*3+2]]);
+  let boxes=[pts];
+  while(boxes.length<16){
+    let bi=-1,bs=-1,bc=0;
+    boxes.forEach((b,i)=>{if(b.length<2)return;for(let c=0;c<3;c++){let lo=255,hi=0;for(const p of b){if(p[c]<lo)lo=p[c];if(p[c]>hi)hi=p[c]}const s=(hi-lo)*Math.sqrt(b.length);if(s>bs){bs=s;bi=i;bc=c}}});
+    if(bi<0||bs<=0)break;
+    const b=boxes[bi].sort((p,q)=>p[bc]-q[bc]),m=b.length>>1;boxes.splice(bi,1,b.slice(0,m),b.slice(m));
+  }
+  const pal=new Uint16Array(16);
+  boxes.forEach((b,i)=>{let r=0,g=0,bl=0;for(const p of b){r+=p[0];g+=p[1];bl+=p[2]}const n=b.length||1;pal[i]=c15(r/n,g/n,bl/n)});
+  return pal;
+}
+function nearest(pal,small){
+  const pc=Array.from(pal,rgb),px=new Uint8Array(4096);
+  for(let i=0;i<4096;i++){const r=small[i*3],g=small[i*3+1],b=small[i*3+2];let best=0,bd=1e9;
+    for(let k=0;k<16;k++){const d=(r-pc[k][0])**2+(g-pc[k][1])**2+(b-pc[k][2])**2;if(d<bd){bd=d;best=k}}px[i]=best}
+  return px;
+}
+function setArt(art,pal){
+  state.art=art;const small=shrink(art);state.pal=pal||medianCut(small);state.px=nearest(state.pal,small);
+  if(state.paintAuto)paintFromEmblem();
+}
+function setEmblemFromCanvas(src){
+  const t=document.createElement('canvas');t.width=t.height=256;const x=t.getContext('2d');x.imageSmoothingQuality='high';
+  const s=Math.min(src.width,src.height);x.drawImage(src,(src.width-s)/2,(src.height-s)/2,s,s,0,0,256,256);
+  setArt(x.getImageData(0,0,256,256).data);
+}
+function defaultEmblem(){
+  const t=document.createElement('canvas');t.width=t.height=256;const x=t.getContext('2d');
+  x.fillStyle='#10161c';x.fillRect(0,0,256,256);x.strokeStyle='#f0a020';x.lineWidth=16;x.beginPath();x.arc(128,128,96,0,7);x.stroke();
+  x.fillStyle='#e25b3a';x.beginPath();x.moveTo(128,40);x.lineTo(200,192);x.lineTo(128,160);x.lineTo(56,192);x.closePath();x.fill();
+  x.fillStyle='#fff4dc';x.fillRect(120,96,16,48);setEmblemFromCanvas(t);
+}
+function drawEmblem(){
+  $('art').getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(state.art),256,256),0,0);
+  const x=$('emb').getContext('2d'),im=x.createImageData(64,64);
+  for(let i=0;i<4096;i++){const [r,g,b]=rgb(state.pal[state.px[i]]);im.data.set([r,g,b,255],i*4)}
+  x.putImageData(im,0,0);
+  const p=$('pal');p.textContent='';for(let i=0;i<16;i++){const e=document.createElement('i');const [r,g,b]=rgb(state.pal[i]);e.style.background=`rgb(${r},${g},${b})`;p.append(e)}
+}
+
+/* ---- paint. Four sections (head, core, arms, legs), each base / optional / detail / joint, each RGB 0..64:
+        the numbers the game's colour sliders show. ---- */
+function paintScheme(pal,px){       /* the emblem's four most used colours; near-identical entries count together */
+  const n=new Array(16).fill(0);for(let i=0;i<4096;i++)n[px[i]]++;
+  const groups=[];
+  for(let i=0;i<16;i++){if(!n[i])continue;const c=rgb(pal[i]);
+    const g=groups.find(g=>Math.abs(g.c[0]-c[0])+Math.abs(g.c[1]-c[1])+Math.abs(g.c[2]-c[2])<=60);
+    if(g){const t=g.n+n[i];g.c=g.c.map((v,k)=>Math.round((v*g.n+c[k]*n[i])/t));g.n=t}else groups.push({c,n:n[i]})}
+  groups.sort((a,b)=>b.n-a.n);
+  const out=groups.slice(0,4).map(g=>g.c);while(out.length<4)out.push(out[out.length-1]||[128,128,128]);
+  return out;
+}
+const toP=v=>Math.round(v*PMAX/255),fromP=v=>Math.round(v*255/PMAX);
+/* Emblem colours are usually too loud for a whole AC: pull each one part of the way towards its own grey. */
+const MUTE=0.45;
+function mute([r,g,b]){const y=0.299*r+0.587*g+0.114*b;return [r,g,b].map(v=>Math.round(y+(v-y)*MUTE))}
+function paintFromEmblem(){
+  const [base,detail,joint,optional]=paintScheme(state.pal,state.px).map(mute);
+  const set=[base,optional,detail,joint];             /* stored order */
+  for(let s=0;s<4;s++)for(let t=0;t<4;t++)for(let c=0;c<3;c++)state.paint[s*12+t*3+c]=toP(set[t][c]);
+}
+const uniform=()=>{for(let i=12;i<48;i++)if(state.paint[i]!==state.paint[i%12])return false;return true};
+const hex=(r,g,b)=>'#'+[r,g,b].map(v=>fromP(v).toString(16).padStart(2,'0')).join('');
+function drawPaint(){
+  const host=$('paint');host.textContent='';
+  const split=$('split').checked;
+  (split?SECTIONS:['All sections']).forEach((sec,s)=>{
+    const h=document.createElement('p');h.className='sec';h.textContent=sec;
+    const row=document.createElement('div');row.className='swatches';
+    TONES.forEach((tone,t)=>{
+      const o=s*12+t*3,box=document.createElement('label');box.className='sw';
+      const cap=document.createElement('span');cap.textContent=tone;
+      const inp=document.createElement('input');inp.type='color';inp.value=hex(state.paint[o],state.paint[o+1],state.paint[o+2]);
+      inp.setAttribute('aria-label',sec+', '+tone+' colour');
+      const val=document.createElement('output');val.textContent=state.paint[o]+' '+state.paint[o+1]+' '+state.paint[o+2];
+      inp.addEventListener('input',()=>{const v=inp.value;const c=[1,3,5].map(k=>toP(parseInt(v.slice(k,k+2),16)));
+        for(const sx of (split?[s]:[0,1,2,3]))for(let k=0;k<3;k++)state.paint[sx*12+t*3+k]=c[k];
+        state.paintAuto=false;val.textContent=c.join(' ');refresh()});
+      box.append(cap,inp,val);row.append(box)});
+    host.append(h,row)});
+}
+
+/* ---- payload: the build, as bits. ----
+   format 3: 4 bits format, 13 record bytes (parts, optional-parts mask, booster), 1 spare record flag, 4 bits pattern,
+   2 bits variant, 4 bits Human PLUS level, 1 bit "all four sections share one paint", then 12 or 48 colour values of
+   7 bits, two 5-bit name lengths and the names as 7-bit characters. A length byte leads and a CRC-16 follows. */
+function crc16(b){let c=0xffff;for(const v of b){c^=v<<8;for(let i=0;i<8;i++)c=c&0x8000?((c<<1)^0x1021)&0xffff:(c<<1)&0xffff}return c}
+const enc=s=>Array.from(s.slice(0,16)).map(ch=>{const c=ch.charCodeAt(0);return c>=32&&c<127?c:63});
+function pack(){
+  const bits=[],put=(v,n)=>{for(let i=n-1;i>=0;i--)bits.push((v>>i)&1)};
+  put(3,4);
+  for(let i=0;i<13;i++)put(state.rec[i],8);
+  put(state.flag,1);put(state.pattern,4);put(state.variant,2);put(state.plus,4);
+  const uni=uniform();put(uni?1:0,1);
+  for(let i=0;i<(uni?12:48);i++)put(state.paint[i],7);
+  const names=['pilot','acname'].map(id=>enc($(id).value.trim()));
+  for(const n of names)put(n.length,5);
+  for(const n of names)for(const c of n)put(c,7);
+  while(bits.length%8)bits.push(0);
+  const bytes=[];for(let i=0;i<bits.length;i+=8){let v=0;for(let j=0;j<8;j++)v=(v<<1)|bits[i+j];bytes.push(v)}
+  const crc=crc16(bytes);bytes.push(crc>>8,crc&255);
+  return [bytes.length,...bytes];             /* first byte: how many follow */
+}
+function unpack(p){
+  const n=p[0];if(!n||n<18||n+1>p.length)throw new Error('This image has no colour bar this builder recognises.');
+  const body=p.slice(1,n-1);
+  if(crc16(body)!==((p[n-1]<<8)|p[n]))throw new Error('The colour bar could not be read cleanly (checksum).');
+  let pos=0;const get=k=>{let v=0;for(let i=0;i<k;i++){v=(v<<1)|((body[pos>>3]>>(7-(pos&7)))&1);pos++}return v};
+  const rd=l=>{let t='';for(let i=0;i<l;i++)t+=String.fromCharCode(get(7));return t};
+  const fmt=get(4);
+  if(fmt!==2&&fmt!==3)throw new Error('This card was made with a different builder (format '+fmt+').');
+  const rec=[];for(let i=0;i<13;i++)rec.push(get(8));
+  const u={fmt,rec,flag:0,pattern:0,variant:0,plus:0,paint:null};
+  if(fmt===2)get(2);                           /* the first cards carried a skill band; paint came from the emblem */
+  else{u.flag=get(1);u.pattern=get(4);u.variant=get(2);u.plus=get(4);
+    const uni=get(1);u.paint=new Uint8Array(48);
+    if(uni){const c=[];for(let i=0;i<12;i++)c.push(get(7));for(let i=0;i<48;i++)u.paint[i]=c[i%12]}
+    else for(let i=0;i<48;i++)u.paint[i]=get(7)}
+  const l0=get(5),l1=get(5);if(l0>16||l1>16)throw new Error('The colour bar could not be read cleanly.');
+  u.names=[rd(l0),rd(l1)];return u;
+}
+
+/* ---- card: 640x640. One strip down the left edge and nothing on the other three sides.
+        From the top: a white start mark, sixteen swatches (the game emblem's palette, in order), a thin white mark,
+        then the build in 8x8 cells, each one of eight inks (three bits). The strip is two cells wide and grows to
+        three or four only when the build needs it; the white start mark is as wide as the strip. ---- */
+const N=640,SW=8,CELL=8,Y_SW=8,Y_DATA=Y_SW+16*SW+8,ROWS=Math.floor((N-Y_DATA)/CELL),MAXCOLS=4;
+const capOf=cols=>Math.floor(ROWS*cols*3/8),CAP=capOf(MAXCOLS);
+const cellRect=(k,cols)=>[(k%cols)*CELL,Y_DATA+Math.floor(k/cols)*CELL,CELL,CELL];
+const EX=72,EY=64;                  /* where the emblem sits, 512x512 */
+function drawCard(){
+  const cv=document.createElement('canvas');cv.width=cv.height=N;const x=cv.getContext('2d');
+  x.fillStyle='#06090d';x.fillRect(0,0,N,N);
+  const bytes=pack();let cols=2;while(cols<MAXCOLS&&bytes.length>capOf(cols))cols++;
+  if(bytes.length>capOf(cols))throw new Error('Too much data for the colour bar.');
+  const W=cols*CELL;
+  x.fillStyle='#fff';x.fillRect(0,0,W,Y_SW);
+  for(let i=0;i<16;i++){const [r,g,b]=rgb(state.pal[i]);x.fillStyle=`rgb(${r},${g},${b})`;x.fillRect(0,Y_SW+i*SW,W,SW)}
+  x.fillStyle='#fff';x.fillRect(0,Y_SW+16*SW,W,4);
+  const bits=[];for(const b of bytes)for(let i=7;i>=0;i--)bits.push((b>>i)&1);
+  const cells=Math.ceil(bits.length/3);
+  for(let k=0;k<cells;k++){const v=((bits[k*3]||0)<<2)|((bits[k*3+1]||0)<<1)|(bits[k*3+2]||0);
+    x.fillStyle=`rgb(${v&4?255:0},${v&2?255:0},${v&1?255:0})`;x.fillRect(...cellRect(k,cols))}
+  x.strokeStyle='#2f4a55';x.strokeRect(40.5,24.5,N-65,N-49);
+  const t=document.createElement('canvas');t.width=t.height=256;t.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(state.art),256,256),0,0);
+  x.imageSmoothingEnabled=false;x.drawImage(t,EX,EY,512,512);x.imageSmoothingEnabled=true;
+  x.font='600 15px "Chakra Petch",sans-serif';x.textBaseline='middle';x.fillStyle='#b9d4cf';
+  x.textAlign='left';x.fillText($('acname').value.trim().toUpperCase(),EX,44);
+  x.textAlign='right';x.fillStyle='#5f7f80';x.fillText($('pilot').value.trim().toUpperCase(),EX+512,44);
+  x.textAlign='left';x.font='500 11px "Chakra Petch",sans-serif';x.fillText('MASTER OF ARENA  /  AI BATTLE ENTRY',EX,598);
+  return {cv,used:bytes.length,cells,cols};
+}
+function readCard(src){             /* src: anything drawable, any size */
+  const cv=document.createElement('canvas');cv.width=cv.height=N;const x=cv.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingQuality='high';x.drawImage(src,0,0,N,N);
+  const d=x.getImageData(0,0,N,N).data;
+  const avg=(rx,ry,rw,rh)=>{let r=0,g=0,b=0,n=0;for(let y=ry;y<ry+rh;y++)for(let xx=rx;xx<rx+rw;xx++){const o=(y*N+xx)*4;r+=d[o];g+=d[o+1];b+=d[o+2];n++}return [r/n,g/n,b/n]};
+  let cols=0;while(cols<MAXCOLS){const [r,g,b]=avg(cols*CELL+2,2,4,4);if(r+g+b<384)break;cols++}
+  if(cols<2)throw new Error('This image has no colour bar this builder recognises.');
+  const cell=k=>{const [rx,ry]=cellRect(k,cols);const [r,g,b]=avg(rx+2,ry+2,4,4);return [r>127?1:0,g>127?1:0,b>127?1:0]};
+  const bits=[];for(let k=0;k<3;k++)bits.push(...cell(k));
+  const len=bits.slice(0,8).reduce((v,b)=>(v<<1)|b,0);
+  if(!len||len+1>capOf(cols))throw new Error('This image has no colour bar this builder recognises.');
+  const cells=Math.ceil((len+1)*8/3);for(let k=3;k<cells;k++)bits.push(...cell(k));
+  const bytes=[];for(let i=0;i+8<=bits.length;i+=8){let v=0;for(let j=0;j<8;j++)v=(v<<1)|bits[i+j];bytes.push(v)}
+  const u=unpack(bytes);
+  const pal=new Uint16Array(16);for(let i=0;i<16;i++){const [r,g,b]=avg(4,Y_SW+i*SW+2,8,4);pal[i]=c15(r,g,b)}
+  const art=new Uint8ClampedArray(256*256*4);
+  for(let y=0;y<256;y++)for(let xx=0;xx<256;xx++){const [r,g,b]=avg(EX+xx*2,EY+y*2,2,2);art.set([r,g,b,255],(y*256+xx)*4)}
+  return {...u,pal,art,px:nearest(pal,shrink(art))};
+}
+function apply(u){
+  for(let i=0;i<13;i++)state.rec[i]=u.rec[i];
+  state.flag=u.flag;state.pattern=0;state.variant=0;state.plus=u.plus;   /* preset patterns are not offered: custom paint only */
+  state.paintAuto=!u.paint;setArt(u.art,u.pal);
+  if(u.paint)state.paint=u.paint;
+  $('split').checked=!uniform();
+  $('pilot').value=u.names[0];$('acname').value=u.names[1];render();
+}
+
+/* ---- stats: each part's own numbers, the totals, and the game's own checks ---- */
+const partOf=(cat,i)=>PARTS[cat].find(p=>p[0]===i)||null;
+function tally(){
+  const t={weight:0,drain:0,ap:0,ds:0,de:0,arm:0,legMax:0,coreMax:0,output:0,legW:0};
+  SLOTS.forEach(([cat,byte],n)=>{
+    const p=partOf(cat,state.rec[byte]);const el=$('stat'+n);
+    if(!p){el.textContent=' ';return}
+    const [,,w,en,ap,ds,de,x]=p;t.weight+=w;t.drain+=en;t.ap+=ap;t.ds+=ds;t.de+=de;
+    if((cat==='hand'||cat==='blade')&&!weaponArms())t.arm+=w;
+    if(cat==='legs'){t.legMax=x;t.legW=w}
+    if(cat==='core')t.coreMax=x;
+    if(cat==='gen')t.output=x;
+    const bits=['W '+w];if(cat==='gen')bits.push('OUT '+x);else bits.push('EN '+en);
+    if(ap)bits.push('AP '+ap,'DEF '+ds+' / '+de);
+    if(cat==='core')bits.push('ARM LOAD '+x,'SLOTS '+(CORE_SLOTS[p[0]]||0));if(cat==='legs')bits.push('LOAD '+x);if(cat==='boost')bits.push('POWER '+x);
+    el.textContent=bits.join('   ');
+  });
+  return t;
+}
+function meter(id,val,max,over){const e=$(id);e.textContent=val+' / '+max;e.className=val>max?over:'';return val>max}
+let blocked='';
+function drawStats(){
+  const t=tally(),plus=state.plus>0,cls=plus?'warnc':'badc';
+  $('t-weight').textContent=t.weight;$('t-ap').textContent=t.ap;$('t-def').textContent=t.ds+' / '+t.de;
+  const legOver=meter('t-leg',t.weight-t.legW,t.legMax,cls);
+  const armOver=meter('t-arm',t.arm,t.coreMax,cls);
+  const enOver=meter('t-en',t.drain,t.output,cls);
+  const optOver=meter('t-opt',slotsUsed(),slotMax(),'badc');
+  const missing=needsBooster()&&state.rec[12]===255;
+  const over=[legOver&&'the legs\' load',armOver&&'the core\'s arm load',enOver&&'the generator\'s output'].filter(Boolean);
+  blocked=missing?'These legs need a booster.':optOver?'The optional parts need more slots than this core has.':(!plus&&over.length)?'Over '+over.join(' and ')+'. The game will not field this AC without Human PLUS.':'';
+  const v=$('verdict');
+  if(blocked){v.textContent=blocked;v.className='status bad'}
+  else if(over.length){v.textContent='Over '+over.join(' and ')+'. Allowed, because Human PLUS is on.';v.className='status warn'}
+  else{v.textContent='This AC can be fielded.';v.className='status ok'}
+  const om=$('optmsg');om.textContent=slotsUsed()+' of '+slotMax()+' slots used on this core.';om.className='status '+(optOver?'bad':'');
+  $('save').disabled=!!blocked;
+}
+let current=null;
+function refresh(){                  /* everything except rebuilding the colour inputs */
+  normalise();syncSelects();drawEmblem();drawStats();
+  try{current=drawCard();$('card').src=current.cv.toDataURL('image/png');
+    $('bits').textContent=current.cells+' colour blocks ('+current.used+' bytes)';}
+  catch(e){current=null;$('bits').textContent=e.message}
+}
+function render(){refresh();drawPaint()}
+const near=(a,b)=>{const p=rgb(a),q=rgb(b);return Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])+Math.abs(p[2]-q[2])<=48};
+function say(msg,ok){const s=$('status');s.textContent=msg;s.className='status '+(ok?'ok':'bad')}
+function loadImage(file,cb){const img=new Image();img.onload=()=>cb(img);img.onerror=()=>say('That file could not be opened as an image.',false);img.src=URL.createObjectURL(file)}
+function sameBuild(u){
+  return u.rec.every((v,i)=>v===state.rec[i])&&u.flag===state.flag&&u.pattern===state.pattern&&u.variant===state.variant&&u.plus===state.plus&&
+    !!u.paint&&u.paint.every((v,i)=>v===state.paint[i])&&u.names[0]===$('pilot').value.trim().slice(0,16)&&u.names[1]===$('acname').value.trim().slice(0,16);
+}
+
+$('embfile').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,img=>{setEmblemFromCanvas(img);render()})});
+$('readfile').addEventListener('change',e=>{const f=e.target.files[0];if(f)loadImage(f,img=>{try{const u=readCard(img);apply(u);say('Loaded '+u.names[1]+' / '+u.names[0]+'.',true)}catch(err){say(err.message,false)}})});
+$('selftest').addEventListener('click',()=>{
+  /* shrink to 480 px, save as JPEG quality 0.7, read it back, and compare every field and game-emblem pixel */
+  if(!current)return;
+  const small=document.createElement('canvas');small.width=small.height=480;const sx=small.getContext('2d');sx.imageSmoothingQuality='high';sx.drawImage(current.cv,0,0,480,480);
+  const img=new Image();img.onload=()=>{try{const u=readCard(img);let wrong=0;for(let i=0;i<4096;i++)if(!near(u.pal[u.px[i]],state.pal[state.px[i]]))wrong++;
+      const same=sameBuild(u);
+      say(same?('Read back correctly after shrinking to 480 px and JPEG. Game emblem pixels that differ: '+wrong+' of 4096.'):'Read back, but the build did not match.',same)}catch(err){say('Did not survive shrinking and JPEG: '+err.message,false)}};
+  img.src=small.toDataURL('image/jpeg',0.7);
+});
+for(const id of ['pilot','acname'])$(id).addEventListener('input',refresh);
+$('plus').addEventListener('change',e=>{state.plus=e.target.checked?PLUS_FULL:0;render()});
+$('split').addEventListener('change',e=>{if(!e.target.checked)for(let i=12;i<48;i++)state.paint[i]=state.paint[i%12];render()});
+$('fromemblem').addEventListener('click',()=>{state.paintAuto=true;paintFromEmblem();$('split').checked=false;render()});
+/* Saving: through the viewer's save prompt where this page runs inside one, as an ordinary download anywhere else. */
+function saveName(){const n=($('acname').value.trim()||'raven').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'raven';return n+'-card.png'}
+function note(msg,ok){const s=$('savemsg');s.textContent=msg;s.className='status '+(ok?'ok':'bad')}
+$('save').addEventListener('click',async()=>{
+  if(!current)return;
+  const blob=await new Promise(r=>current.cv.toBlob(r,'image/png'));
+  let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){dl=null}
+  if(dl){try{await dl.save({filename:saveName(),data:blob});note('Saved.',true)}
+    catch(e){note(e&&e.code==='declined'?'Not saved.':'Saving is not available in this view. Press and hold the card, or right-click it, and save the image.',false)}
+    return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=saveName();document.body.append(a);a.click();a.remove();
+  note('If nothing was saved, press and hold the card, or right-click it, and save the image.',true);
+});
+window.__rc={state,pack,unpack,readCard,drawCard,apply,render,CAP,capOf,near,paintScheme,sameBuild,setArt,OPTIONS,mute};
+buildSelects();defaultEmblem();render();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh);
+</script>
+
+</body></html>
