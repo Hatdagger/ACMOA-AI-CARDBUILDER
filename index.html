@@ -81,8 +81,8 @@ button:disabled{opacity:.4;cursor:not-allowed}
  <div class="col">
   <section><h2>Pilot</h2>
    <div class="rows">
-    <label for="pilot">Pilot</label><span class="nf"><input type="text" id="pilot" maxlength="8" value="Lynx" autocomplete="off" spellcheck="false"><small id="pilot-n"></small></span>
-    <label for="acname">AC name</label><span class="nf"><input type="text" id="acname" maxlength="8" value="Kitten" autocomplete="off" spellcheck="false"><small id="acname-n"></small></span>
+    <label for="pilot">Pilot</label><span class="nf"><input type="text" id="pilot" maxlength="7" value="Lynx" autocomplete="off" spellcheck="false"><small id="pilot-n"></small></span>
+    <label for="acname">AC name</label><span class="nf"><input type="text" id="acname" maxlength="7" value="Kitten" autocomplete="off" spellcheck="false"><small id="acname-n"></small></span>
    </div>
    <label class="chk" for="plus"><input type="checkbox" id="plus"><span id="pluslabel">Human PLUS</span></label>
    <p class="note">Human PLUS is all or nothing here. With it on, the game fields the AC even when it is over its weight or energy limits.</p>
@@ -309,7 +309,7 @@ function drawPaint(){
    7 bits, two 5-bit name lengths and the names as 7-bit characters. A length byte leads and a CRC-16 follows. */
 function crc16(b){let c=0xffff;for(const v of b){c^=v<<8;for(let i=0;i<8;i++)c=c&0x8000?((c<<1)^0x1021)&0xffff:(c<<1)&0xffff}return c}
 /* The game stores a name as 8 full-width characters: letters, digits, space and a few marks. Anything else is blanked. */
-const NAME_MAX=8,NAME_OK=/^[A-Za-z0-9 ,.:;?!\-\/~|'"()\[\]+=<$%#&*@]$/;
+const NAME_MAX=7,NAME_OK=/^[A-Za-z0-9 ,.:;?!\-\/~|'"()\[\]+=<$%#&*@]$/;
 const cleanName=s=>Array.from(s).slice(0,NAME_MAX).map(ch=>NAME_OK.test(ch)?ch:' ').join('');
 const enc=s=>Array.from(cleanName(s)).map(ch=>ch.charCodeAt(0));
 function fixNames(){for(const id of ['pilot','acname']){const e=$(id),v=cleanName(e.value);if(v!==e.value){const p=e.selectionStart;e.value=v;try{e.setSelectionRange(p,p)}catch(_){}}$(id+'-n').textContent=Array.from(v).length+' / '+NAME_MAX+' max'}}
