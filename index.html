@@ -274,11 +274,8 @@ function paintScheme(pal,px){       /* the emblem's four most used colours; near
   return out;
 }
 const toP=v=>Math.round(v*PMAX/255),fromP=v=>Math.round(v*255/PMAX);
-/* Emblem colours are usually too loud for a whole AC: pull each one part of the way towards its own grey. */
-const MUTE=0.45;
-function mute([r,g,b]){const y=0.299*r+0.587*g+0.114*b;return [r,g,b].map(v=>Math.round(y+(v-y)*MUTE))}
 function paintFromEmblem(){
-  const [base,detail,joint,optional]=paintScheme(state.pal,state.px).map(mute);
+  const [base,detail,joint,optional]=paintScheme(state.pal,state.px);
   const set=[base,optional,detail,joint];             /* stored order */
   for(let s=0;s<4;s++)for(let t=0;t<4;t++)for(let c=0;c<3;c++)state.paint[s*12+t*3+c]=toP(set[t][c]);
 }
@@ -347,6 +344,8 @@ function unpack(p){
         From the top: a white start mark, sixteen swatches (the game emblem's palette, in order), a thin white mark,
         then the build in 8x8 cells, each one of eight inks (three bits). The strip is two cells wide and grows to
         three or four only when the build needs it; the white start mark is as wide as the strip. ---- */
+/* Data inks: softer than full-strength primaries, still well clear of the reader's 127 threshold either side. */
+let INK_ON=200,INK_OFF=56;
 const N=640,SW=8,CELL=8,Y_SW=8,Y_DATA=Y_SW+16*SW+8,ROWS=Math.floor((N-Y_DATA)/CELL),MAXCOLS=4;
 const capOf=cols=>Math.floor(ROWS*cols*3/8),CAP=capOf(MAXCOLS);
 const cellRect=(k,cols)=>[(k%cols)*CELL,Y_DATA+Math.floor(k/cols)*CELL,CELL,CELL];
@@ -363,7 +362,7 @@ function drawCard(){
   const bits=[];for(const b of bytes)for(let i=7;i>=0;i--)bits.push((b>>i)&1);
   const cells=Math.ceil(bits.length/3);
   for(let k=0;k<cells;k++){const v=((bits[k*3]||0)<<2)|((bits[k*3+1]||0)<<1)|(bits[k*3+2]||0);
-    x.fillStyle=`rgb(${v&4?255:0},${v&2?255:0},${v&1?255:0})`;x.fillRect(...cellRect(k,cols))}
+    x.fillStyle=`rgb(${v&4?INK_ON:INK_OFF},${v&2?INK_ON:INK_OFF},${v&1?INK_ON:INK_OFF})`;x.fillRect(...cellRect(k,cols))}
   x.strokeStyle='#2f4a55';x.strokeRect(40.5,24.5,N-65,N-49);
   const t=document.createElement('canvas');t.width=t.height=256;t.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(state.art),256,256),0,0);
   x.imageSmoothingEnabled=false;x.drawImage(t,EX,EY,512,512);x.imageSmoothingEnabled=true;
@@ -483,7 +482,7 @@ $('save').addEventListener('click',async()=>{
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=saveName();document.body.append(a);a.click();a.remove();
   note('If nothing was saved, press and hold the card, or right-click it, and save the image.',true);
 });
-window.__rc={state,pack,unpack,readCard,drawCard,apply,render,CAP,capOf,near,paintScheme,sameBuild,setArt,OPTIONS,mute};
+window.__rc={state,pack,unpack,readCard,drawCard,apply,render,CAP,capOf,near,paintScheme,sameBuild,setArt,OPTIONS,INK_ON,INK_OFF};
 buildSelects();defaultEmblem();render();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh);
 </script>
